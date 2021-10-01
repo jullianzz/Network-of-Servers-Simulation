@@ -13,6 +13,8 @@ public class Simulator {
 
     Timeline timeline;                      // Timeline queue to store events
 
+    // Simulation metadata about performance goes here???
+    
     // Parameters of the Simulation
     double lambdaA;                         // rate parameter for arrival rate of requests
     double lambdaB;                         // rate parameter for service time of requests
@@ -24,24 +26,26 @@ public class Simulator {
     double globalClockDeath = 0.0;          // globalClockDeath is the death time of the last request processed by the server. Not necessarily smaller than arrival time
     int totalRequestsCount = 0; 
 
-
     // simulate(...) simulates the arrival and execution of requests
     // at a generic server for 'time' milliseconds, where time is passed as a 
     // parameter to the method
     void simulate(double time) {
-        this.populateTimeline(time);        // Call populateTimeline(...) member function to generate Events for 'time' milliseconds
-
+        Monitor monitor = new Monitor(this.lambdaA, 1.0/this.lambdaB, time); 
+        this.populateTimeline(time, monitor);        // Call populateTimeline(...) member function to generate Events for 'time' milliseconds
         this.timeline.printTimeline();      // Print the simulation output
     }
 
-    void populateTimeline(double T) {
+    void populateTimeline(double T, Monitor monitor) {
         Exp exp = new Exp();                // Instantiate Exp object to calculate interarrival times and service times
 
         double interArrivalTime; 
         double serviceTime;
         Event evt;
 
-        // Push Events onto the queue
+        // Generate Monitor Watch events
+        monitor.generateWatchEvents();
+
+        int index = 0;        // Monitor Watch events array index
         while (this.globalClockA < T && this.globalClockDeath < T) {
             // Generate ARR event of request R_n
             interArrivalTime = exp.getExp(this.lambdaA); 
@@ -65,6 +69,14 @@ public class Simulator {
 
             // Increment totalRequestsCount
             this.totalRequestsCount += 1; 
+
+            // Monitoring Code
+            if (monitor.arr.get(index).beginWatchTimestamp <= globalClockA && globalClockDeath < monitor.arr.get(index).finishWatchTimestamp) {
+                WatchEvent wEvt = monitor.arr.get(index); 
+                wEvt.totalServiceTime += serviceTime; 
+                wEvt.requestCount += 1;
+                wEvt.queueCount
+            }
         }
 
         // Sort Timeline queue according to the timeStamp of each Event
@@ -85,15 +97,7 @@ public class Simulator {
         Timeline timeline = new Timeline();
 
         // Construct simulator using Timeline object
-        Simulator simulator = new Simulator(timeline, lambdaA, lambdaB); 
-
-        // TESTING CODE
-        // Event evt = new Event(Event.eventType.START, 2.302096, 2);
-        // timeline.addToTimeline(evt);  
-        // evt = new Event(Event.eventType.DONE, 2.302096, 1);
-        // timeline.addToTimeline(evt);  
-        // timeline.sortChronologically();
-        // timeline.printTimeline();
+        Simulator simulator = new Simulator(timeline, lambdaA, lambdaB);
 
         // Invoke simulate(...) to run Simulation
         simulator.simulate(time);   
