@@ -13,75 +13,118 @@ public class Simulator {
 
     Timeline timeline;                      // Timeline queue to store events
 
-    // Simulation metadata about performance goes here???
-    
     // Parameters of the Simulation
     double lambdaA;                         // rate parameter for arrival rate of requests
     double lambdaB;                         // rate parameter for service time of requests
 
     // Time-keeping mechanism for the Simulation
     // NOTE: globalClock(*) variables are persistent for the life of the Timeline 
-    //       and are monotonically increasing
+    // and are monotonically increasing
     double globalClockA = 0.0;              // globalClockA is the arrival time of the request
     double globalClockDeath = 0.0;          // globalClockDeath is the death time of the last request processed by the server. Not necessarily smaller than arrival time
-    int totalRequestsCount = 0; 
+    int totalCompletedR = 0; 
+
+    // System metrics
+    double avgUtilization; 
+    double avgResponseTime; 
 
     // simulate(...) simulates the arrival and execution of requests
     // at a generic server for 'time' milliseconds, where time is passed as a 
     // parameter to the method
     void simulate(double time) {
         Monitor monitor = new Monitor(this.lambdaA, 1.0/this.lambdaB, time); 
-        this.populateTimeline(time, monitor);        // Call populateTimeline(...) member function to generate Events for 'time' milliseconds
-        this.timeline.printTimeline();      // Print the simulation output
+        this.populateTimeline(time, monitor);       // Call populateTimeline(...) member function to generate Events for 'time' milliseconds
+        this.timeline.printTimeline();              // Print the simulation output
+        System.out.println();
+        this.printStatistics();                     // Print Statistics
     }
 
     void populateTimeline(double T, Monitor monitor) {
         Exp exp = new Exp();                // Instantiate Exp object to calculate interarrival times and service times
-
-        double interArrivalTime; 
-        double serviceTime;
+        double runningUtilization = 0.0;
+        double runningResponseTime = 0.0;
+        double interArrivalTime, serviceTime;
+        double startTime, doneTime, arrTime; 
+        int requestId = 0; 
         Event evt;
 
         // Generate Monitor Watch events
-        monitor.generateWatchEvents();
+        // monitor.generateWatchEvents();
 
-        int index = 0;        // Monitor Watch events array index
+        // int index = 0;        // Monitor Watch events array index
         while (this.globalClockA < T && this.globalClockDeath < T) {
             // Generate ARR event of request R_n
             interArrivalTime = exp.getExp(this.lambdaA); 
             globalClockA += interArrivalTime; 
-            evt = new Event(Event.eventType.ARR, globalClockA, totalRequestsCount);
-            timeline.addToTimeline(evt);            
+            evt = new Event(Event.eventType.ARR, globalClockA, requestId);
+            timeline.addToTimeline(evt);     
+            arrTime = evt.timeStamp;        
 
             // Generate the START event of request R_n
             if (globalClockA >= globalClockDeath) {     // Aka, the resource is immediately free
-                evt = new Event(Event.eventType.START, globalClockA, totalRequestsCount); 
+                evt = new Event(Event.eventType.START, globalClockA, requestId); 
             } else {                                    // Aka, the resource is not free, and the request R will begin when request R_(n-1) dies
-                evt = new Event(Event.eventType.START, globalClockDeath, totalRequestsCount); 
+                evt = new Event(Event.eventType.START, globalClockDeath, requestId); 
             }
             timeline.addToTimeline(evt);
+            startTime = evt.timeStamp;
+
 
             // Generate the DONE event of request R_n
             serviceTime = exp.getExp(lambdaB); 
             globalClockDeath = evt.timeStamp + serviceTime;     // evt.timeStamp equals the time of START for request R_n 
-            evt = new Event(Event.eventType.DONE, globalClockDeath, totalRequestsCount);
+            evt = new Event(Event.eventType.DONE, globalClockDeath, requestId);
             timeline.addToTimeline(evt);
+            doneTime = evt.timeStamp; 
 
-            // Increment totalRequestsCount
-            this.totalRequestsCount += 1; 
+            // Update request ID
+            requestId += 1; 
+
+            // If the time-bounds of the request are within the time of the Simulation (T) then update system metrics
+            if (arrTime <= T && doneTime <= T) {
+                // Increment totalCompletedR
+                this.totalCompletedR += 1; 
+                // Update utilization and response time running count
+                runningUtilization += (doneTime - startTime);
+                runningResponseTime += (doneTime - arrTime); 
+            }
+            
 
             // Monitoring Code
-            if (monitor.arr.get(index).beginWatchTimestamp <= globalClockA && globalClockDeath < monitor.arr.get(index).finishWatchTimestamp) {
-                WatchEvent wEvt = monitor.arr.get(index); 
-                wEvt.totalServiceTime += serviceTime; 
-                wEvt.requestCount += 1;
-                wEvt.queueCount
-            }
+            // if (monitor.arr.get(index).beginWatchTimestamp <= globalClockA && globalClockDeath < monitor.arr.get(index).finishWatchTimestamp) {
+            //     WatchEvent wEvt = monitor.arr.get(index); 
+            //     wEvt.totalServiceTime += serviceTime; 
+            //     wEvt.requestCount += 1;
+            //     wEvt.queueCount
+            // }
         }
 
         // Sort Timeline queue according to the timeStamp of each Event
         timeline.sortChronologically();
+
+        // Determine utilization of the Simulation
+        avgUtilization = runningUtilization / T; 
+        avgResponseTime = runningResponseTime / ((double) this.totalCompletedR); 
     }
+
+    void printStatistics() {
+        System.out.printf("UTIL: %f",this.avgUtilization);
+        System.out.println();
+
+        System.out.printf("QLEN: ");
+        System.out.println();
+
+        System.out.printf("WLEN: ");
+        System.out.println();
+
+        System.out.printf("TRESP: %f", this.avgResponseTime);
+        System.out.println();
+
+        System.out.printf("TWAIT: ");
+        System.out.println();
+    }
+
+
     public static void main(String[] args) {
         
         // Pass in arguments from calling environment

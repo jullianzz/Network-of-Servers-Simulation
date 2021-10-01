@@ -1,3 +1,7 @@
+// Julia Zeng, BU ID: U48618445
+// CS-350 HW 2
+
+
 public class WatchEvent {
 
     // WatchEvent constructor
