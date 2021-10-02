@@ -2,8 +2,8 @@
 // CS-350 HW 2
 
 public class Event {
-    // enumeration goes here 
-    public enum eventType { ARR, START, DONE }
+    // enumeration of Event types
+    public enum eventType { ARR, START, DONE, MONITOR }
 
     // Event constructor
     public Event(eventType type, double timeStamp, int tag) {
@@ -19,8 +19,7 @@ public class Event {
     double timeStamp; 
 
     // class member: int requestId; this is the tag of the request in the
-    // order that it arrives at the server
-    // e.g. for the first request, requestId = 0.
+    // order that it arrives at the server. e.g. for the first request, requestId = 0.
     int requestId; 
 
 }

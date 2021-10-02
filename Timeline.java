@@ -7,27 +7,25 @@ import java.util.Comparator;
 
 public class Timeline {
 
-    // Timeline Constructor
-    // public Timeline() {
-    // }
+    LinkedList<Event> queue = new LinkedList<Event>();  // Implement the Timeline queue using LinkedList
 
-    // implementation of timeline queue (FIFO) using Linked List
-    LinkedList<Event> queue = new LinkedList<Event>();
+    double avgQueueLength;              // Average queue length of the queue taken at different intervals of time specified by the Monitor events in the queue
+    double avgPopulationOfSystem;       // Average population size of the queue taken at different intervals of time specified by the Monitor events in the queue
 
-    // accepts two pieces of information that add the event input into the Timeline
+
+    // addToTimeline(...) adds the Event to the queue
     void addToTimeline(Event evtToAdd) {
         queue.add(evtToAdd);
     }
 
-    // popNext() removes the oldest event from the timeline
+    // popNext() removes and returns the oldest Event from the queue 
     Event popNext() {
-        Event evt = queue.peek(); 
-        queue.remove();
+        Event evt = queue.remove();
         return evt; 
     }
 
+    // sortChronologically() sorts the queue according to the timeStamp of each Event
     void sortChronologically() {
-        // Sort Timeline queue according to the timeStamp of each Event
         Collections.sort(queue, 
         new Comparator<Event>() {
             @Override
@@ -44,15 +42,40 @@ public class Timeline {
 
     // Todo : Understand that this method will remove timeline elements. May need refactoring
     // in future assignments to use peek() method instead
-    void printTimeline() {
+    void iterateTimeline() {
         // Scan through queue and print all events in their chronological order
         // Pop Event from queue and print the eventType and timeStamp
+        int runningQueueLength = 0; 
+        int runningPopulationLength = 0; 
+        int monitorCount = 0;
         Event event; 
         while (this.queue.size() != 0) {
             event = this.popNext(); 
-            System.out.printf("%s%d %s: %f", "R", event.requestId, event.type.toString(), event.timeStamp); 
-            System.out.println(); 
+            if (event.type != Event.eventType.MONITOR) {
+                switch (event.type) {
+                    case ARR: 
+                        runningQueueLength ++;
+                        runningPopulationLength ++;
+                        break;
+                    case START:
+                        runningQueueLength --; 
+                        break;
+                    case DONE: 
+                        runningPopulationLength --;
+                        break;
+                    default:
+                        break; 
+                }
+                System.out.printf("%s%d %s: %f", "R", event.requestId, event.type.toString(), event.timeStamp); 
+                System.out.println(); 
+            } else {
+                avgQueueLength += runningQueueLength; 
+                avgPopulationOfSystem += runningPopulationLength; 
+                monitorCount ++; 
+            }
         }
+        this.avgQueueLength = ((double) avgQueueLength) / ((double) monitorCount); 
+        this.avgPopulationOfSystem = ((double) avgPopulationOfSystem) / ((double) monitorCount); 
     }
 
 }
