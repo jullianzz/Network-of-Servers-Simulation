@@ -38,7 +38,6 @@ public class Simulator {
         this.timeline.iterateTimeline();                                    // Print the ARR, START, and DONE Events of the Simulation and computes avgQueueLength and avgPopulationOfSystem of the System
         avgQueueLength = this.timeline.avgQueueLength;                      // Get avgQueueLength from the Timeline
         avgPopulationOfSystem = this.timeline.avgPopulationOfSystem;        // Get avgPopulationOfSystem from the Timeline
-        System.out.println();
         this.printStatistics();                                             // Print System Statistics
     }
 
