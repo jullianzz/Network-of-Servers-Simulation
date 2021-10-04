@@ -1,5 +1,5 @@
 output.txt
-hw2.zip
+*.zip
 *.class
 test.java
 Simulator_copy.java

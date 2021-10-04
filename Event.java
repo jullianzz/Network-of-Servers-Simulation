@@ -2,20 +2,17 @@
 // CS-350 HW 2
 
 public class Event {
-    // enumeration of Event types
-    public enum eventType { ARR, START, DONE, MONITOR }
 
-    // Event constructor
+    public enum eventType { ARR, START, DONE, MONITOR, NEXT }
+
     public Event(eventType type, double timeStamp, int tag) {
         this.type = type; 
         this.timeStamp = timeStamp; 
         this.requestId = tag; 
     }
 
-    // class member: eventType type;
     eventType type; 
 
-    // class member: double timeStamp;  
     double timeStamp; 
 
     // class member: int requestId; this is the tag of the request in the
@@ -23,3 +20,10 @@ public class Event {
     int requestId; 
 
 }
+
+
+/* My notes:
+Each server has a START X and DONE X
+Primary Server Events: ARR, START 0, DONE 0/NEXT 1
+Secondary Server Events: NEXT 1, START 1, DONE 1
+*/
