@@ -1,5 +1,5 @@
 // Julia Zeng, BU ID: U48618445
-// CS-350 HW 2
+// CS-350 HW 3
 
 import java.util.LinkedList;
 import java.util.Collections;
@@ -32,14 +32,15 @@ public class Timeline {
             public int compare(Event a, Event b) {
                 return (a.timeStamp > b.timeStamp) ? 1 : 
                        ((a.timeStamp < b.timeStamp) ? -1 : 
-                       ((a.type == Event.eventType.START && b.type == Event.eventType.DONE) ? 1 :
-                       ((a.type == Event.eventType.DONE && b.type == Event.eventType.START) ? -1 : 0
+                       ((a.type == Event.eventType.START && (b.type == Event.eventType.NEXT || b.type == Event.eventType.DONE)) ? 1 :
+                       (((a.type == Event.eventType.DONE || a.type == Event.eventType.NEXT) && b.type == Event.eventType.START) ? -1 : 0
                        )));
             }
         }
         );
     }
-
+// next -> Start
+// done -> start
     // Todo : Understand that this method will remove timeline elements. May need refactoring
     // in future assignments to use peek() method instead
     void iterateTimeline() {
@@ -51,32 +52,43 @@ public class Timeline {
         Event event; 
         while (this.queue.size() != 0) {
             event = this.popNext(); 
-            if (event.type != Event.eventType.MONITOR) {
-                switch (event.type) {
-                    case ARR: 
-                        runningQueueLength ++;
-                        runningPopulationLength ++;
-                        break;
-                    case START:
-                        runningQueueLength --; 
-                        break;
-                    case DONE: 
-                        runningPopulationLength --;
-                        break;
-                    default:
-                        break; 
-                }
-                System.out.printf("%s%d %s: %f", "R", event.requestId, event.type.toString(), event.timeStamp); 
-                System.out.println(); 
-            } else {
-                avgQueueLength += runningQueueLength; 
-                avgPopulationOfSystem += runningPopulationLength; 
-                monitorCount ++; 
+            switch (event.type) {
+                case ARR: 
+                    runningQueueLength ++;
+                    runningPopulationLength ++;
+                    System.out.printf("%s%d %s: %f", "R", event.requestId, event.type.toString(), event.timeStamp); 
+                    System.out.println(); 
+                    break;
+                case START:
+                    runningQueueLength --; 
+                    System.out.printf("%s%d %s %d: %f", "R", event.requestId, event.type.toString(), event.serverId, event.timeStamp); 
+                    System.out.println(); 
+                    break;
+                case DONE: 
+                    runningPopulationLength --;
+                    System.out.printf("%s%d %s %d: %f", "R", event.requestId, event.type.toString(), event.serverId, event.timeStamp); 
+                    System.out.println(); 
+                    break;
+                case NEXT:
+                    System.out.printf("%s%d %s %d: %f", "R", event.requestId, event.type.toString(), event.serverId, event.timeStamp); 
+                    System.out.println(); 
+                    break;
+                case MONITOR:
+                    avgQueueLength += runningQueueLength; 
+                    avgPopulationOfSystem += runningPopulationLength; 
+                    monitorCount ++; 
+                    break;
+                default:
+                    break; 
             }
         }
         this.avgQueueLength = ((double) avgQueueLength) / ((double) monitorCount); 
         this.avgPopulationOfSystem = ((double) avgPopulationOfSystem) / ((double) monitorCount); 
     }
+
+    // void printTimeline() {
+
+    // }
 
 }
 

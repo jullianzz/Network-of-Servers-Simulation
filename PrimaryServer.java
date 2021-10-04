@@ -10,34 +10,61 @@ public class PrimaryServer extends Server {
         this.lambdaS = lambdaS; 
         this.secondaryServer = secondaryServer; 
         this.lambdaA = lambdaA;
+        this.serverDown = false; 
+        this.runningUtilization = 0.0; 
+        this.runningResponseTime = 0.0; 
+        this.runningWaitTime = 0.0; 
     }
 
     double lambdaA;                         // Arrival rate of requests
     SecondaryServer secondaryServer; 
+    double runningUtilization;
+    double runningResponseTime; 
+    double runningWaitTime; 
+
 
     void serverUp(Request firstReq, double T) {
         currentRequest = firstReq;
-        this.requestCount ++; 
-        while (currentRequest.doneEvt.timeStamp <= T) {
-            this.handoffRequest(currentRequest.doneEvt);
+        double arrTime; 
+        double startTime;
+        double doneTime; 
+        while (currentRequest.doneEvt.timeStamp <= T && !secondaryServer.serverDown) {
+            this.requestCount ++;                                           // Increment the total number of completed requests
             timeline.addToTimeline(currentRequest.arrEvt);
             timeline.addToTimeline(currentRequest.startEvt);
-            timeline.addToTimeline(currentRequest.doneEvt);
+            // timeline.addToTimeline(currentRequest.doneEvt);
+            arrTime = currentRequest.arrEvt.timeStamp; 
+            startTime = currentRequest.startEvt.timeStamp; 
+            doneTime = currentRequest.doneEvt.timeStamp; 
+            runningUtilization += (doneTime - startTime);         // Update total utilization time
+            runningResponseTime += (doneTime - arrTime);          // Update total response time
+            runningWaitTime += (startTime - arrTime);             // Update total wait time
+            this.handoffRequest(currentRequest.doneEvt, T);
             currentRequest = currentRequest.nextRequest(lambdaA, lambdaS, requestCount, this);
-            this.requestCount ++; 
         }
-        // // If the time-bounds of the request are within the period of the Simulation then update System Statistics
-        // if (arrTimestamp <= T && doneTimestamp <= T) {
-        //     this.totalCompletedR += 1;                                      // Increment the total number of completed requests
-        //     runningUtilization += (doneTimestamp - startTimestamp);         // Update total utilization time
-        //     runningResponseTime += (doneTimestamp - arrTimestamp);          // Update total response time
-        //     runningWaitTime += (startTimestamp - arrTimestamp);             // Update total wait time
+        serverDown = true; 
+    }
+
+    void monitorSystem(double T) {
+        // Compute Utilization for Primary Server
+        this.Utilization = runningUtilization / ((double) requestCount);
+        // Create Monitor Events
+        // Monitor mon = new Monitor(lambdaA, serverId); 
+        // while (mon.monEvt.timeStamp < T) {
+        //     timeline.addToTimeline(mon.monEvt);
+        //     mon = mon.nextMonitor(lambdaA); 
+        //     if (mon.monEvt.timeStamp < T) {
+        //         break; 
+        //     }
         // }
+
+        // timeline.iterateTimeline();
+        // this.avgQueueLength = timeline.avgQueueLength;  
     }
 
     // Handle a request that is finished at this server
-    void handoffRequest(Event doneEvt) {
-        secondaryServer.handleIncomingRequest(doneEvt);
+    void handoffRequest(Event doneEvt, double T) {
+        secondaryServer.handleIncomingRequest(doneEvt, T);
     }
 
     Event.eventType getArrType() {

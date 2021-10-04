@@ -10,9 +10,9 @@ public class Request {
 
 
     public Request(double arrTime, double startTime, double doneTime, int tag, Server s) {
-        this.arrEvt = new Event(s.getArrType(), arrTime, tag);
-        this.startEvt = new Event(s.getStartType(), startTime, tag);
-        this.doneEvt = new Event(s.getDoneType(), doneTime, tag);
+        this.arrEvt = new Event(s.getArrType(), arrTime, tag, s.serverId);
+        this.startEvt = new Event(s.getStartType(), startTime, tag, s.serverId);
+        this.doneEvt = new Event(s.getDoneType(), doneTime, tag, s.serverId);
     }
 
     Request nextRequest(double lambdaA, double lambdaS, int tag, Server s) {

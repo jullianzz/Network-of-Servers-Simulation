@@ -1,14 +1,17 @@
 // Julia Zeng, BU ID: U48618445
-// CS-350 HW 2
+// CS-350 HW 3
 
 public class Event {
 
-    public enum eventType { ARR, START, DONE, MONITOR, NEXT }
+    // NULL events are not passed to the timeline and are used to denote 
+    // dummy Request objects
+    public enum eventType { ARR, START, DONE, MONITOR, NEXT, NULL }
 
-    public Event(eventType type, double timeStamp, int tag) {
+    public Event(eventType type, double timeStamp, int tag, int serverId) {
         this.type = type; 
         this.timeStamp = timeStamp; 
         this.requestId = tag; 
+        this.serverId = serverId; 
     }
 
     eventType type; 
@@ -18,6 +21,8 @@ public class Event {
     // class member: int requestId; this is the tag of the request in the
     // order that it arrives at the server. e.g. for the first request, requestId = 0.
     int requestId; 
+
+    int serverId; 
 
 }
 

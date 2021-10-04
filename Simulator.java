@@ -38,6 +38,10 @@ public class Simulator {
         double doneTime = startTime + Exp.getExp(lambdaB); 
         Request req = new Request(arrTime, arrTime, doneTime, 0, this.PS);
         PS.serverUp(req, time); 
+        PS.monitorSystem(time); 
+        PS.secondaryServer.monitorSystem(time); 
+        this.avgResponseTime = (PS.runningResponseTime + PS.secondaryServer.runningResponseTime) / ((double) PS.requestCount);
+        this.avgWaitTime = (PS.runningWaitTime + PS.secondaryServer.runningWaitTime) / ((double) PS.requestCount); 
         //append PS and SS timelines together to make the Simulator Timeline
         timeline.queue.addAll(PS.timeline.queue); 
         timeline.queue.addAll(PS.secondaryServer.timeline.queue); 
@@ -45,18 +49,21 @@ public class Simulator {
         timeline.iterateTimeline();
         // avgQueueLength = this.timeline.avgQueueLength;                      // Get avgQueueLength from the Timeline
         // avgPopulationOfSystem = this.timeline.avgPopulationOfSystem;        // Get avgPopulationOfSystem from the Timeline
-        // this.printStatistics();                                             // Print System Statistics
+        this.printStatistics();                                             // Print System Statistics
     }
 
     void printStatistics() {
-        System.out.printf("UTIL: %f",this.avgUtilization);
+        System.out.printf("UTIL 0: %f", PS.Utilization);
         System.out.println();
 
-        System.out.printf("QLEN: %f", this.avgPopulationOfSystem);
+        System.out.printf("UTIL 1: %f", PS.secondaryServer.Utilization);
         System.out.println();
 
-        System.out.printf("WLEN: %f", this.avgQueueLength);
-        System.out.println();
+        // System.out.printf("QLEN 0: %f", PS.avgQueueLength); // average queue length
+        // System.out.println();
+
+        // System.out.printf("QLEN 1: %f", 0.0001);
+        // System.out.println();
 
         System.out.printf("TRESP: %f", this.avgResponseTime);
         System.out.println();
