@@ -9,7 +9,7 @@ public class Simulator {
         this.lambdaA = lambdaA;
         this.lambdaB = lambdaB; 
         this.lambdaC = lambdaC; 
-        this.SS = new SecondaryServer(lambdaC);
+        this.SS = new SecondaryServer(lambdaC, lambdaA);    // The arrival rate of requests at SS must be upper-bounded by the arr rate at the PS
         this.PS = new PrimaryServer(SS, lambdaB, lambdaA); 
     }
 
@@ -19,7 +19,6 @@ public class Simulator {
     double lambdaA;                         // rate parameter for arrival rate of requests
     double lambdaB;                         // rate parameter for service time of Primary Server
     double lambdaC;                         // rate parameter for service time of Secondary Server
-    int totalCompletedR = 0;                // total number of completed requests, i.e. requests that have an associated DONE event by the end of the Simulation    
         
     // System Statistics
     double avgUtilization; 
@@ -37,18 +36,32 @@ public class Simulator {
         double startTime = arrTime;
         double doneTime = startTime + Exp.getExp(lambdaB); 
         Request req = new Request(arrTime, arrTime, doneTime, 0, this.PS);
+
+        // Start Primary Server and send the first request. This will generate the timelines for both servers. 
         PS.serverUp(req, time); 
+        // Create Monitor Events for the Primary Server
         PS.monitorSystem(time); 
+        // Compute Utilization and Average Queue Length for Primary Server
+        PS.computeStatistics(time); 
+        // Create Monitor Events for the Secondary Server
         PS.secondaryServer.monitorSystem(time); 
+        // Compute Utilization and Average Queue Length for Secondary Server
+        PS.secondaryServer.computeStatistics(time);
+
+        // Compute the Average Response Time of the Dual-Server System
         this.avgResponseTime = (PS.runningResponseTime + PS.secondaryServer.runningResponseTime) / ((double) PS.requestCount);
+        
+        // Compute the Average Waiting Time of the Dual-Server System
         this.avgWaitTime = (PS.runningWaitTime + PS.secondaryServer.runningWaitTime) / ((double) PS.requestCount); 
-        //append PS and SS timelines together to make the Simulator Timeline
+
+        // Append the timelime of the PS and SS together
         timeline.queue.addAll(PS.timeline.queue); 
         timeline.queue.addAll(PS.secondaryServer.timeline.queue); 
-        this.timeline.sortChronologically();
-        timeline.iterateTimeline();
-        // avgQueueLength = this.timeline.avgQueueLength;                      // Get avgQueueLength from the Timeline
-        // avgPopulationOfSystem = this.timeline.avgPopulationOfSystem;        // Get avgPopulationOfSystem from the Timeline
+
+        // Print the timeline of Events for the Dual-Server Simulation
+        timeline.printTimeline();
+
+        // Print the Statistics
         this.printStatistics();                                             // Print System Statistics
     }
 
@@ -59,11 +72,11 @@ public class Simulator {
         System.out.printf("UTIL 1: %f", PS.secondaryServer.Utilization);
         System.out.println();
 
-        // System.out.printf("QLEN 0: %f", PS.avgQueueLength); // average queue length
-        // System.out.println();
+        System.out.printf("QLEN 0: %f", PS.avgQueueLength);
+        System.out.println();
 
-        // System.out.printf("QLEN 1: %f", 0.0001);
-        // System.out.println();
+        System.out.printf("QLEN 1: %f", PS.secondaryServer.avgQueueLength);
+        System.out.println();
 
         System.out.printf("TRESP: %f", this.avgResponseTime);
         System.out.println();

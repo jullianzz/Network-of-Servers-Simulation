@@ -1,11 +1,12 @@
 // Julia Zeng, BU ID: U48618445
 // CS-350 HW 3
 
+import java.util.Iterator;
 
 // Note: The secondary server does not generate any requests!!!
 
 public class SecondaryServer extends Server {
-    public SecondaryServer(double lambdaS) {
+    public SecondaryServer(double lambdaS, double lambdaA) {
         this.serverId = 1; 
         this.requestCount = 0; 
         this.timeline = new Timeline(); 
@@ -15,6 +16,8 @@ public class SecondaryServer extends Server {
         this.runningResponseTime = 0.0; 
         this.runningWaitTime = 0.0; 
         this.serverDown = false; 
+        this.lambdaA = lambdaA;
+        this.avgQueueLength = 0.0;
     }
 
     Event.eventType getArrType() {
@@ -29,6 +32,7 @@ public class SecondaryServer extends Server {
         return Event.eventType.DONE; 
     }
 
+    double lambdaA; 
     double runningUtilization; 
     double runningResponseTime; 
     double runningWaitTime; 
@@ -46,36 +50,64 @@ public class SecondaryServer extends Server {
             currentRequest = req; 
             this.requestCount ++; 
             runningUtilization += (doneTime - startTime); 
-            // System.out.printf("Done time minus strt time is is %f", doneTime-startTime);
             runningResponseTime += (doneTime - arrTime);          // Update total response time
             runningWaitTime += (startTime - arrTime); 
         } else {
             serverDown = true;  
         }
+    }
 
-
-        // // If the time-bounds of the request are within the period of the Simulation then update System Statistics
-        // if (arrTimestamp <= T && doneTimestamp <= T) {
-        //     this.totalCompletedR += 1;                                      // Increment the total number of completed requests
-        //     runningUtilization += (doneTimestamp - startTimestamp);         // Update total utilization time
-        //     runningResponseTime += (doneTimestamp - arrTimestamp);          // Update total response time
-        //     runningWaitTime += (startTimestamp - arrTimestamp);             // Update total wait time
-        // }
+    void computeStatistics(double time) {
+        timeline.sortChronologically();
+        int runningQueueLength = 0; 
+        int runningPopulationLength = 0; 
+        int monitorCount = 0;
+        Event evt; 
+        for (Iterator<Event> iter = timeline.queue.iterator(); iter.hasNext();) {
+            evt = iter.next(); 
+            switch (evt.type) {
+                // case ARR: 
+                //     runningQueueLength ++;
+                //     runningPopulationLength ++;
+                //     break;
+                case START:
+                    runningQueueLength --; 
+                    break;
+                case DONE: 
+                    runningPopulationLength --;
+                    break;
+                case NEXT:
+                    runningQueueLength ++;
+                    runningPopulationLength ++;
+                    break;
+                case MONITOR:
+                    avgQueueLength += runningQueueLength; 
+                    // System.out.println(runningQueueLength); 
+                    avgPopulationOfSystem += runningPopulationLength; 
+                    // System.out.println(avgQueueLength);
+                    monitorCount ++; 
+                    break;
+                default:
+                    break; 
+            }
+        }
+        Utilization = runningUtilization / time;
+        avgQueueLength = avgQueueLength / ((double) monitorCount); 
+        avgPopulationOfSystem = avgPopulationOfSystem / ((double) monitorCount); 
+        // System.out.printf("Server 2 monitor count is %d\n", monitorCount);
     }
 
 
-void monitorSystem(double T) {
-    Utilization = runningUtilization / ((double) requestCount);
-
-    // // Create Monitor Events
-    // Monitor mon = new Monitor(lambdaA, serverId);   // what is lambdaA for the monitor?? Probably covered this in class
-    // while (mon.monEvt.timeStamp < T) {
-    //     timeline.addToTimeline(mon.monEvt);
-    //     mon = mon.nextMonitor(lambdaA); 
-    //     if (mon.monEvt.timeStamp < T) {
-    //         break; 
-    //     }
-    // }
-}
+    void monitorSystem(double T) {
+        // Create Monitor Events
+        Monitor mon = new Monitor(lambdaA, serverId);   // what is lambdaA for the monitor?? Ans: Ohhh, it must be upper bounded by the arrival rate of the Primary Server
+        while (mon.monEvt.timeStamp < T) {
+            timeline.addToTimeline(mon.monEvt);
+            mon = mon.nextMonitor(lambdaA); 
+            if (mon.monEvt.timeStamp > T) {
+                break; 
+            }
+        }
+    }
 
 }
