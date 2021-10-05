@@ -96,7 +96,6 @@ public class PrimaryServer extends Server {
         Utilization = runningUtilization / time;
         avgQueueLength = avgQueueLength / ((double) monitorCount); 
         avgPopulationOfSystem = avgPopulationOfSystem / ((double) monitorCount); 
-        // System.out.printf("Server 1 monitor count is %d\n", monitorCount);
     }
 
     // Handle a request that is finished at this server

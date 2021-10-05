@@ -82,9 +82,7 @@ public class SecondaryServer extends Server {
                     break;
                 case MONITOR:
                     avgQueueLength += runningQueueLength; 
-                    // System.out.println(runningQueueLength); 
                     avgPopulationOfSystem += runningPopulationLength; 
-                    // System.out.println(avgQueueLength);
                     monitorCount ++; 
                     break;
                 default:
@@ -94,7 +92,6 @@ public class SecondaryServer extends Server {
         Utilization = runningUtilization / time;
         avgQueueLength = avgQueueLength / ((double) monitorCount); 
         avgPopulationOfSystem = avgPopulationOfSystem / ((double) monitorCount); 
-        // System.out.printf("Server 2 monitor count is %d\n", monitorCount);
     }
 
 
@@ -108,6 +105,15 @@ public class SecondaryServer extends Server {
                 break; 
             }
         }
+    }
+
+    public static void main(String[] args) {
+        double T = Double.parseDouble(args[0]); 
+        double lambdaA = Double.parseDouble(args[1]);
+        double lambdaS = Double.parseDouble(args[2]); 
+        SecondaryServer ss = new SecondaryServer(lambdaS, lambdaA); 
+        ss.monitorSystem(T); 
+        ss.timeline.printTimeline();
     }
 
 }

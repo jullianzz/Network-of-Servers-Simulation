@@ -72,10 +72,10 @@ public class Simulator {
         System.out.printf("UTIL 1: %f", PS.secondaryServer.Utilization);
         System.out.println();
 
-        System.out.printf("QLEN 0: %f", PS.avgQueueLength);
+        System.out.printf("QLEN 0: %f", PS.avgPopulationOfSystem);
         System.out.println();
 
-        System.out.printf("QLEN 1: %f", PS.secondaryServer.avgQueueLength);
+        System.out.printf("QLEN 1: %f", PS.secondaryServer.avgPopulationOfSystem);
         System.out.println();
 
         System.out.printf("TRESP: %f", this.avgResponseTime);
