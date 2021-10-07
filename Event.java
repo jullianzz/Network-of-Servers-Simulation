@@ -14,6 +14,14 @@ public class Event {
         this.serverId = serverId; 
     }
 
+    public Event(eventType type, double timeStamp, int tag, int serverId, boolean print) {
+        this.type = type; 
+        this.timeStamp = timeStamp; 
+        this.requestId = tag; 
+        this.serverId = serverId; 
+        this.print = print;
+    }
+
     eventType type; 
 
     double timeStamp; 
@@ -23,6 +31,8 @@ public class Event {
     int requestId; 
 
     int serverId; 
+
+    boolean print;     // If true, print this event in Timeline. Else, do not print.
 
 }
 

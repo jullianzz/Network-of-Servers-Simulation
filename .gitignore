@@ -3,3 +3,4 @@ output.txt
 *.class
 test.java
 Simulator_copy.java
+IncorrectOutput.txt

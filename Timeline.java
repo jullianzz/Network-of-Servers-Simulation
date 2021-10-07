@@ -27,11 +27,16 @@ public class Timeline {
         new Comparator<Event>() {
             @Override
             public int compare(Event a, Event b) {
-                return (a.timeStamp > b.timeStamp) ? 1 : 
-                       ((a.timeStamp < b.timeStamp) ? -1 : 
-                       ((a.type == Event.eventType.START && (b.type == Event.eventType.NEXT || b.type == Event.eventType.DONE)) ? 1 :
-                       (((a.type == Event.eventType.DONE || a.type == Event.eventType.NEXT) && b.type == Event.eventType.START) ? -1 : 0
-                       )));
+                return 
+                (a.timeStamp > b.timeStamp) ? 1 : ( // 1
+                    (a.timeStamp < b.timeStamp) ? -1 : ( //2 
+                        (a.type == Event.eventType.START && (b.type == Event.eventType.NEXT || b.type == Event.eventType.DONE)) ? 1 : ( // 3
+                            ((a.type == Event.eventType.DONE || a.type == Event.eventType.NEXT) && b.type == Event.eventType.START) ? -1 : ( // 4
+                                (a.type == Event.eventType.START && b.type == Event.eventType.START && a.requestId < b.requestId) ? -1 : 0
+                            ) // 4
+                        ) // 3
+                    ) //2
+                ); // 1
             }
         }
         );
@@ -55,7 +60,7 @@ public class Timeline {
                     System.out.println(); 
                     break;
                 case DONE: 
-                    if (evt.serverId == 1) {
+                    if (evt.print) {
                         System.out.printf("%s%d %s %d: %f", "R", evt.requestId, evt.type.toString(), evt.serverId, evt.timeStamp); 
                         System.out.println(); 
                     }
