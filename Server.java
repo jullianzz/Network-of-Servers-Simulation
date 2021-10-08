@@ -11,6 +11,8 @@ public abstract class Server {
     double lambdaS;                         // rate of service
     Request currentRequest;
     boolean serverDown; 
+    int numRequestDeathsSeenAtServer = 0; 
+    int runningNumOfServersVisited = 0;   // running sum of number of servers visited across all dead Requests seen at this server. 
 
     
     double Utilization;
@@ -24,4 +26,9 @@ public abstract class Server {
     abstract LinkedList<Request> handleIncomingRequest(double T, LinkedList<Request> queueIn, LinkedList<Request> queueOut);  
     abstract LinkedList<Request> handoffRequest(Request req, LinkedList<Request> queueOut);   
 
+
+    void sinkRequest(Request req) {         // Handle a request when it terminates at a server. Aka does not get sent to another server. 
+        numRequestDeathsSeenAtServer ++; 
+        runningNumOfServersVisited += req.runCount; 
+    }
 }

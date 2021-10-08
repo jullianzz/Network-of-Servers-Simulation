@@ -106,8 +106,9 @@ public class PrimaryServer extends Server {
         if (prob > this.P_exit) {   // Don't exit the request
             req.doneEvt.print = false; 
             queueOut.add(new Request(req.doneEvt.timeStamp, -1, -1, tag, this, req.runCount)); 
-        } else {    // Exit the request
+        } else {    // Exit the request. Request sinks.
             req.doneEvt.print = true; 
+            sinkRequest(req);
         }
         timeline.addToTimeline(req.doneEvt);
         return queueOut; 

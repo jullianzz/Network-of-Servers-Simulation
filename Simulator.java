@@ -27,6 +27,7 @@ public class Simulator {
     double avgWaitTime; 
     double avgQueueLength; 
     double avgPopulationOfSystem; 
+    double avgNumOfServersVisitedPerRequest; 
 
     // Communication queues between the servers (necessary for decoupling)
     LinkedList<Request> queue0 = new LinkedList<Request>();
@@ -100,6 +101,9 @@ public class Simulator {
         // Compute the Average Waiting Time of the Dual-Server System
         this.avgWaitTime = (PS.runningWaitTime + SS.runningWaitTime) / ((double) PS.requestCount); 
 
+        // Compute the Average Number of Servers Visited By a Request
+        this.avgNumOfServersVisitedPerRequest = ((double) (PS.runningNumOfServersVisited + SS.runningNumOfServersVisited)) / ((double) (PS.numRequestDeathsSeenAtServer + SS.numRequestDeathsSeenAtServer)); 
+
         // Append the timelime of the PS and SS together
         timeline.queue.addAll(PS.timeline.queue); 
         timeline.queue.addAll(SS.timeline.queue); 
@@ -130,8 +134,8 @@ public class Simulator {
         System.out.printf("TWAIT: %f", this.avgWaitTime);
         System.out.println();
 
-        // System.out.printf("RUNS: ", );        // Number of servers visited by a request
-        // System.out.println();
+        System.out.printf("RUNS: %f", this.avgNumOfServersVisitedPerRequest);        // Number of servers visited per request
+        System.out.println();
     }
 
 

@@ -20,7 +20,7 @@ public class SecondaryServer extends Server {
         this.serverDown = false; 
         this.lambdaA = lambdaA;
         this.avgQueueLength = 0.0;
-        this.P_rerequest = P_rerequest; 
+        this.P_rerequest = P_rerequest;  
     }
 
     Event.eventType getArrType() {
@@ -40,7 +40,6 @@ public class SecondaryServer extends Server {
     double runningResponseTime; 
     double runningWaitTime; 
     double P_rerequest; 
-    PrimaryServer primaryServer; 
 
     // Handle a request that is finished at the primary server
     LinkedList<Request> handleIncomingRequest(double T, LinkedList<Request> queueIn, LinkedList<Request> queueOut) {
@@ -76,7 +75,7 @@ public class SecondaryServer extends Server {
                     if (evt.serverId == 1) {    // This is the ARR event for the Secondary Server
                         runningQueueLength ++;
                         runningPopulationLength ++;
-                    }
+                    } 
                     break;
                 case START:
                     runningQueueLength --; 
@@ -122,8 +121,9 @@ public class SecondaryServer extends Server {
             req.doneEvt.print = false;
             timeline.addToTimeline(new Event(Event.eventType.NEXT, req.doneEvt.timeStamp, req.doneEvt.requestId, 0, true)); 
             queueOut.add(new Request(req.doneEvt.timeStamp, -1, -1, -1, this, req.runCount)); 
-        } else {    // else, don't handoff to primary server
+        } else {    // else, don't handoff to primary server. Request sinks. 
             req.doneEvt.print = true;
+            sinkRequest(req);
         }
         timeline.addToTimeline(req.doneEvt);
         return queueOut; 
