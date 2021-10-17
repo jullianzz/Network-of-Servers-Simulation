@@ -1,140 +1,241 @@
-// Julia Zeng, BU ID: U48618445
-// CS-350 HW 3
-
 import java.util.LinkedList;
+import java.lang.Math;
 
 public class Simulator {
 
-    public Simulator(Timeline timeline, double lambdaA, double lambdaB, double lambdaC, double P_exit, double P_rerequest) {  
+    // Constructor
+    public Simulator
+    (
+        Timeline timeline, 
+        double lambdaA, 
+        double lambdaB, 
+        double lambdaC, 
+        double lambdaD, 
+        double t1,
+        double p1,
+        double t2,
+        double p2,
+        double t3,
+        double p3, 
+        int K2,
+        double p01,
+        double p02,
+        double p3out,
+        double p31,
+        double p32
+    ) 
+    {
         this.timeline = timeline; 
         this.lambdaA = lambdaA;
         this.lambdaB = lambdaB; 
         this.lambdaC = lambdaC; 
-        this.PS = new PrimaryServer(lambdaB, lambdaA, P_exit);
-        this.SS = new SecondaryServer(lambdaC, lambdaA, P_rerequest);  
+        this.lambdaD = lambdaD;
+        this.t1 = t1;
+        this.p1 = p1;
+        this.t2 = t2;
+        this.p2 = p2;
+        this.t3 = t3;
+        this.p3 = p3; 
+        this.K2 = K2;
+        this.p01 = p01;
+        this.p02 = p02;
+        this.p3out = p3out;
+        this.p31 = p31;  
+        this.p32 = p32; 
+
+        // S0 is a single-processor M/M/1 Server with determinate service time
+        this.S0 = new DeterminateServer(lambdaB, lambdaA, 0, 0, 1); 
+        // S1 is a dual-processor M/M/1 Server with determinate service time                   
+        this.S1 = new DeterminateServer(lambdaC, lambdaA*p01, 0, 1, 2); 
+        // S2 is a single-processor M/M/K Server with determinate service time
+        this.S2 = new MMKServer(lambdaD, lambdaA*p02, 0, 2, 1, K2); 
+        // S3 is a single-processor M/M/1 Server with non-determinate service time
+        this.S3 = new NondeterminateServer(lambdaA*p02, p3out, 3, 1, t1, p1, t2, p2, t3, p3); 
+
     }
 
-    PrimaryServer PS;  
-    SecondaryServer SS; 
+    // Class members
+    DeterminateServer S0;
+    DeterminateServer S1;
+    MMKServer S2;
+    NondeterminateServer S3; 
+
     Timeline timeline;                      // Timeline queue to store events
-    double lambdaA;                         // rate parameter for arrival rate of requests
-    double lambdaB;                         // rate parameter for service time of Primary Server
-    double lambdaC;                         // rate parameter for service time of Secondary Server
+    double lambdaA;                         // Rate parameter of arrival rate of requests
+    double lambdaB;                         // Rate parameter of service time of S0
+    double lambdaC;                         // Rate parameter of service time of S1
+    double lambdaD;                         // Rate parameter of service time of S2
+    double t1;
+    double p1;
+    double t2;
+    double p2;
+    double t3;
+    double p3; 
+    double K2;
+    double p01;
+    double p02;
+    double p3out;
+    double p31;
+    double p32;
+    
         
     // System Statistics
-    double avgUtilization; 
     double avgResponseTime; 
-    double avgWaitTime; 
-    double avgQueueLength; 
-    double avgPopulationOfSystem; 
-    double avgNumOfServersVisitedPerRequest; 
+    double avgPopulation; 
 
     // Communication queues between the servers (necessary for decoupling)
-    LinkedList<Request> queue0 = new LinkedList<Request>();
-    LinkedList<Request> queue1 = new LinkedList<Request>(); 
-
+    LinkedList<Request> queueSysIn = new LinkedList<Request>();     // Queue for requests entering the System
+    LinkedList<Request> queueS0Out = new LinkedList<Request>();     // Queue for requests leaving S0
+    LinkedList<Request> queueS1In = new LinkedList<Request>();     // Queue for requests entering S1
+    LinkedList<Request> queueS2In = new LinkedList<Request>();      // Queue for requests entering S2 - S2 Queue is FINITE with size K2
+    LinkedList<Request> queueS3In = new LinkedList<Request>();     // Queue for requests entering S3
+    LinkedList<Request> queueS3Out = new LinkedList<Request>();     // Queue for requests exiting S3
 
     // simulate(...) simulates the arrival and execution of requests at a generic server for 'time' milliseconds
     void simulate(double time) {
-        // Create first request
         int requestId = 0;
-        double arrTime = Exp.getExp(lambdaA); 
-        double arrTimeQu; 
-        Request youngestReq = new Request(arrTime, -1, -1, requestId, PS, 0);
-        // Add first request to Server 0 incoming queue
-        queue0.add(youngestReq); 
-        while (youngestReq.arrEvt.timeStamp < time) {
-            // Handle incoming and outgoing requests for PS
-            queue1 = PS.handleIncomingRequest(time, queue0, queue1);
+        ArrEvent arrEvt = new ArrEvent(Exp.getExp(lambdaA), requestId, 0, true); 
+        Request req = new Request(requestId, 0, arrEvt, null, null, null); 
 
-            // Clear queue0 after all of its requests have been handled by PS
-            queue0.clear();
-
-            // System.out.printf("%d\n", queue1.size());    // should be all 1s for P(drop) = 0 
-            // Handle incoming and outgoing requests for SS
-            queue0 = SS.handleIncomingRequest(time, queue1, queue0);
-
-            // Clear queue1 after all of its requests have been handled by SS
-            queue1.clear();
-
-            // System.out.printf("%d\n", queue0.size());   // should be all 0s for P(rerequest) = 0
-            // Generate new request with ARR non-empty timestamp only. Don't care about the request ID for now
-            if (queue0.size() != 0) {
-                arrTime = youngestReq.arrEvt.timeStamp + Exp.getExp(lambdaA); 
-                arrTimeQu = queue0.peek().arrEvt.timeStamp;
-                queue0.clear();
-                if (arrTime < arrTimeQu) {     // Rebuild next request with just the requestId incremented
-                    requestId ++; 
-                    queue0.add(new Request(arrTime, -1, -1, requestId, PS, 0));
-                    requestId ++; 
-                    queue0.add(new Request(arrTimeQu, -1, -1, requestId, PS, 0));
-                    youngestReq = queue0.get(1); 
+        while (req.arrEvt.timeStamp < time) {
+            timeline.addToTimeline(req.arrEvt); 
+            queueSysIn.add(req);
+            queueS0Out = S0.handleIncomingRequest(time, queueSysIn, queueS0Out);   
+            queueSysIn.clear();    
+            // Split outgoing requests of S0 between S1 and S2         
+            while (queueS0Out.size() != 0) {
+                Request r = queueS0Out.remove();
+                double prob = Math.random(); 
+                if (prob <= p01) {
+                    queueS1In.add(r);
                 }
                 else {
-                    requestId ++; 
-                    queue0.add(new Request(arrTimeQu, -1, -1, requestId, PS, 0));
-                    requestId ++; 
-                    queue0.add(new Request(arrTime, -1, -1, requestId, PS, 0));
-                    youngestReq = queue0.get(1); 
+                    double peekTime = r.arrEvt.timeStamp; 
+                    int pop = queueS2In.size() + S2.getCurrentPopulation(peekTime);
+                    // System.out.printf("pop is %d\n", pop);
+                    if (pop < K2) {
+                        // System.out.println("Added to S2!");
+                        queueS2In.add(r); 
+                    } else {
+                        // System.out.println("Rejected by S2");
+                        S2.handleRejectedRequest();
+                    }
+
                 }
-            } else {
-                requestId ++; 
-                youngestReq = youngestReq.nextRequest(lambdaA, requestId, PS, 0);
-                queue0.add(youngestReq);
             }
-            // System.out.printf("%d\n", queue0.size());
+            queueS3In = S1.handleIncomingRequest(time, queueS1In, queueS3In);
+            queueS1In.clear();
+            queueS3In = S2.handleIncomingRequest(time, queueS2In, queueS3In);
+            queueS2In.clear();
+            queueS3Out = S3.handleIncomingRequest(time, queueS3In, queueS3Out);
+            queueS3In.clear();
+            // Split outgoing requests of S3 between S1, S2, and exit
+            while (queueS3Out.size() != 0) {
+                Request r = queueS3Out.remove(); 
+                double prob = Math.random(); 
+                if (prob <= p31) {
+                    queueS1In.add(r);
+                }
+                else if (prob > p31 && prob <= p31 + p32) {
+                    double peekTime = r.arrEvt.timeStamp; 
+                    int pop = queueS2In.size() + S2.getCurrentPopulation(peekTime);
+                    if (pop < K2) {
+                        queueS2In.add(r); 
+                    } else {
+                        S2.handleRejectedRequest();
+                    }
+                }
+            }
+
+            // Generate new request coming from outside the system (with dummy START and DONE times)
+            requestId ++; 
+            req = req.nextRequest(lambdaA, requestId, S0, true, 0);
+
         }
 
 
-        // Create Monitor Events for the Primary Server
-        PS.monitorSystem(time); 
+        // Create Monitor Events for the Servers
+        // S0.monitorSystem(time); 
+        // S1.monitorSystem(time); 
+        // S2.monitorSystem(time); 
+        // S3.monitorSystem(time); 
+
         // Compute Utilization and Average Queue Length for Primary Server
-        PS.computeStatistics(time); 
-        // Create Monitor Events for the Secondary Server
-        SS.monitorSystem(time); 
-        // Compute Utilization and Average Queue Length for Secondary Server
-        SS.computeStatistics(time);
+        // S0.computeStatistics(time); 
+        // S1.computeStatistics(time); 
+        // S2.computeStatistics(time); 
+        // S3.computeStatistics(time); 
 
-        // Compute the Average Response Time of the Dual-Server System
-        this.avgResponseTime = (PS.runningResponseTime + SS.runningResponseTime) / ((double) PS.requestCount);
-        
-        // Compute the Average Waiting Time of the Dual-Server System
-        this.avgWaitTime = (PS.runningWaitTime + SS.runningWaitTime) / ((double) PS.requestCount); 
+        // Compute the Average Population of the entire System
+        // double totalMonitors = S0.monitorCount + S1.monitorCount + S2.monitorCount + S3.monitorCount; 
+        // double runningPopulation = S0.runningPopulation + S1.runningPopulation + S2.runningPopulation + S3.runningPopulation; 
+        // this.avgPopulation = runningPopulation / totalMonitors; 
 
-        // Compute the Average Number of Servers Visited By a Request
-        this.avgNumOfServersVisitedPerRequest = ((double) (PS.runningNumOfServersVisited + SS.runningNumOfServersVisited)) / ((double) (PS.numRequestDeathsSeenAtServer + SS.numRequestDeathsSeenAtServer)); 
+        // Compute the Average Response Time of the entire System
+        // double totalRequests = S0.completedRequests + S1.completedRequests + S2.completedRequests + S3.completedRequests; 
+        // double runningResponseTime = S0.runningResponseTime + S1.runningResponseTime + S2.runningResponseTime + S3.runningResponseTime; 
+        // this.avgResponseTime = runningResponseTime / totalRequests;
+         
+        // Append the timelime of S0, S1, S2, and S3 together
+        timeline.queue.addAll(S0.timeline.queue); 
+        timeline.queue.addAll(S1.timeline.queue); 
+        timeline.queue.addAll(S2.timeline.queue); 
+        timeline.queue.addAll(S3.timeline.queue); 
 
-        // Append the timelime of the PS and SS together
-        timeline.queue.addAll(PS.timeline.queue); 
-        timeline.queue.addAll(SS.timeline.queue); 
-
-        // Print the timeline of Events for the Dual-Server Simulation
+        // Print the timeline of Events for the Network Of Queues
         timeline.printTimeline();
 
+        System.out.println();
+
         // Print the Statistics
-        this.printStatistics();                                             // Print System Statistics
+        this.printStatistics();                                      
     }
 
     void printStatistics() {
-        System.out.printf("UTIL 0: %f", PS.Utilization);
+        /* S0 Statistics */
+        System.out.printf("S0 UTIL: %f", S0.processors[0].Utilization);
+        System.out.println();
+        System.out.printf("S0 QLEN: %f", S0.avgPopulation);
+        System.out.println();
+        System.out.printf("S0 TRESP: %f", S0.avgResponseTime);
+        System.out.println();
         System.out.println();
 
-        System.out.printf("UTIL 1: %f", SS.Utilization);
+        /* S1 Statistics */
+        System.out.printf("S1,1 UTIL: %f", S1.processors[0].Utilization);
+        System.out.println();
+        System.out.printf("S1,2 UTIL: %f", S1.processors[1].Utilization);
+        System.out.println();
+        System.out.printf("S1 QLEN: %f", S1.avgPopulation);
+        System.out.println();
+        System.out.printf("S1 TRESP: %f", S1.avgResponseTime);
+        System.out.println();
         System.out.println();
 
-        System.out.printf("QLEN 0: %f", PS.avgPopulationOfSystem);
+        /* S2 Statistics */
+        System.out.printf("S2 UTIL: %f", S2.processors[0].Utilization);
+        System.out.println();
+        System.out.printf("S2 QLEN: %f", S2.avgPopulation);
+        System.out.println();
+        System.out.printf("S2 TRESP: %f", S2.avgResponseTime);
+        System.out.println();
+        System.out.printf("S2 DROPPED: %d", S2.numDroppedRequests);        
+        System.out.println();
         System.out.println();
 
-        System.out.printf("QLEN 1: %f", SS.avgPopulationOfSystem);
+        /* S3 Statistics */
+        System.out.printf("S3 UTIL: %f", S3.processors[0].Utilization);
+        System.out.println();
+        System.out.printf("S3 QLEN: %f", S3.avgPopulation);
+        System.out.println();
+        System.out.printf("S3 TRESP: %f", S3.avgResponseTime);
+        System.out.println();
         System.out.println();
 
-        System.out.printf("TRESP: %f", this.avgResponseTime);
+        /* System Statistics */
+        System.out.printf("QTOT: %f", avgPopulation);
         System.out.println();
-
-        System.out.printf("TWAIT: %f", this.avgWaitTime);
-        System.out.println();
-
-        System.out.printf("RUNS: %f", this.avgNumOfServersVisitedPerRequest);        // Number of servers visited per request
+        System.out.printf("TRESP: %f", avgResponseTime);
         System.out.println();
     }
 
@@ -144,36 +245,55 @@ public class Simulator {
         // Pass arguments from calling environment
         double time = Double.parseDouble(args[0]);
         double avgArrivalRateOfRequests = Double.parseDouble(args[1]);
-        double avgServiceTimeOfPrimaryServer = Double.parseDouble(args[2]); 
-        double avgServiceTimeOfSecondaryServer = Double.parseDouble(args[3]); 
-        double P_exit = Double.parseDouble(args[4]);        // Probability of exiting after server 0
-        double P_rerequest = Double.parseDouble(args[5]);   // Probability of re-requesting back to server 0 after exiting server 1
-
+        double avgServiceTimeOfServer0 = Double.parseDouble(args[2]); 
+        double avgServiceTimeOfServer1 = Double.parseDouble(args[3]); 
+        double avgServiceTimeOfServer2 = Double.parseDouble(args[4]); 
+        double t1 = Double.parseDouble(args[5]); 
+        double p1 = Double.parseDouble(args[6]); 
+        double t2 = Double.parseDouble(args[7]); 
+        double p2 = Double.parseDouble(args[8]); 
+        double t3 = Double.parseDouble(args[9]); 
+        double p3 = Double.parseDouble(args[10]); 
+        int K2 = Integer.parseInt(args[11]);  
+        double p01 = Double.parseDouble(args[12]);
+        double p02 = Double.parseDouble(args[13]);
+        double p3out = Double.parseDouble(args[14]);
+        double p31 = Double.parseDouble(args[15]); 
+        double p32 = Double.parseDouble(args[16]); 
+        
+        
         // Set rate parameters of exponential distribution
         double lambdaA = avgArrivalRateOfRequests;
-        double lambdaB = 1.0 / avgServiceTimeOfPrimaryServer; 
-        double lambdaC = 1.0 / avgServiceTimeOfSecondaryServer; 
+        double lambdaB = 1.0 / avgServiceTimeOfServer0; 
+        double lambdaC = 1.0 / avgServiceTimeOfServer1; 
+        double lambdaD = 1.0 / avgServiceTimeOfServer2; 
 
         // Instantiate Timeline object
         Timeline timeline = new Timeline();
 
         // Construct Simulator
-        Simulator simulator = new Simulator(timeline, lambdaA, lambdaB, lambdaC, P_exit, P_rerequest);
+        Simulator simulator = new Simulator(
+            timeline, 
+            lambdaA, 
+            lambdaB, 
+            lambdaC, 
+            lambdaD, 
+            t1,
+            p1,
+            t2,
+            p2,
+            t3,
+            p3, 
+            K2,
+            p01,
+            p02,
+            p3out,
+            p31,
+            p32
+        );
 
-        // Invoke simulate(...) and run Simulation
+        // Run Simulation
         simulator.simulate(time);   
     }
 
 }
-
-
-/* my notes: 
-I think a request STARTS immediately when the resource is available.
-e.g. the start time for R0 is = arrival time of R0,
-the start time for R1 = the DONE time of R0.
-So, when a request finishes, we can immediately set the START time of the next request (IF there is one!)
-EDIT: This is not necessarily true. Need to use death time instead --> If there is no request in the queue, the START time would be the ARRIVAL time of the next request. 
-
-Arrival time is computed with, and only dependent on, average arrival rate.
-Start time has to be kept track of
-*/
