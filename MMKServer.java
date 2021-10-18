@@ -3,8 +3,8 @@ import java.util.Iterator;
 
 public class MMKServer extends DeterminateServer {
 
-    public MMKServer(double lambdaS, double lambdaA, double P_Termination, int serverId, int numProcessors, int K) {
-        super(lambdaS, lambdaA, P_Termination, serverId, numProcessors);
+    public MMKServer(double lambdaS, double P_Termination, int serverId, int numProcessors, int K) {
+        super(lambdaS, P_Termination, serverId, numProcessors);
         this.K = K; 
         this.numDroppedRequests = 0; 
     }
@@ -12,8 +12,8 @@ public class MMKServer extends DeterminateServer {
     final int K; 
     int numDroppedRequests; 
 
-    double getlambdaS() {
-        return lambdaS; 
+    double getServiceTime() {
+        return Exp.getExp(lambdaS); 
     }
 
     // handleRejectedRequest is called when the queue to the M/M/K Server is full

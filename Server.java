@@ -1,18 +1,22 @@
 // Abstract base class Server
 
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.Iterator;
+
 
 public abstract class Server implements Cloneable {
 
     // Constructor
-    public Server(double lambdaA, double P_Termination, int serverId, int numProcessors) {
-        this.lambdaA = lambdaA; 
+    public Server(double P_Termination, int serverId, int numProcessors) {
         this.P_Termination = P_Termination; 
         this.serverId = serverId; 
         this.NUM_PROCESSORS = numProcessors; 
         this.processors = new Processor[NUM_PROCESSORS]; 
         for (int i = 0; i < NUM_PROCESSORS; i++) {
-            processors[i] = new Processor(lambdaA, P_Termination, this, i+1); 
+            processors[i] = new Processor(P_Termination, this, i+1); 
         }
         this.completedRequests = 0; 
         this.timeline = new Timeline(); 
@@ -23,10 +27,10 @@ public abstract class Server implements Cloneable {
     // Meta Data
     int serverId;
     int completedRequests;                       // Number of completed requests seen at the Server
-    double lambdaA;                         // Rate of arrival of requests at the Server
     Request currentRequest;                 // Current request processed at the Server
     double P_Termination;                   // Probability a request terminates at the Server
-    int monitorCount; 
+    // int monitorCount; 
+    Monitor monitor; 
 
     // Timeline
     Timeline timeline; 
@@ -36,46 +40,106 @@ public abstract class Server implements Cloneable {
     Processor[] processors;
 
     // Statistics
+    double Utilization; 
     double avgPopulation; 
     double avgResponseTime; 
-    double runningPopulation; 
-    double runningResponseTime; 
+    double runningPopulation;
+    double runningResponseTime;
+    double runningUtilization; 
+    double avgServiceTime; 
 
     // Methods
-    abstract double getlambdaS(); 
+    abstract double getServiceTime(); 
 
     void computeStatistics(double time) {
-        runningPopulation = 0.0; 
+        // Compute Utilization and avgResponseTime
         runningResponseTime = 0.0; 
+        runningUtilization = 0.0;  
         for (int i = 0; i < NUM_PROCESSORS; i++) {
             processors[i].computeStatistics(time);
-            runningPopulation += processors[i].runningPopulation; 
             runningResponseTime += processors[i].runningResponseTime; 
+            runningUtilization += processors[i].runningUtilization; 
         }
-        avgPopulation = runningPopulation / ((double) monitorCount); 
+        Utilization = runningUtilization / time; 
         avgResponseTime = runningResponseTime / ((double) completedRequests); 
+
+        // Compute avgPopulation
+        runningPopulation = 0.0; 
+        // Sort the timeline before monitoring population
+        timeline.sortChronologically();
+        // int q = 0; 
+        int p = 0; 
+        Event evt; 
+        for (Iterator<Event> iter = timeline.queue.iterator(); iter.hasNext();) {
+            evt = iter.next(); 
+            switch (evt.type) {
+                case ARR: 
+                    // q ++;
+                    p ++;
+                    break;
+                case START:
+                    // q --; 
+                    break;
+                case DONE: 
+                    p --;
+                    break;
+                case MONITOR:
+                    // runningQueueLength += q; 
+                    runningPopulation += p; 
+                    // System.out.printf("p is %d", p);
+                    break;
+                default:
+                    break; 
+            }
+        }
+        avgPopulation = runningPopulation / ((double) monitor.count); 
+        avgServiceTime = runningUtilization / ((double) completedRequests);
     }
 
 
     // Call monitorSystem method of each processor
-    void monitorSystem(double T) {
-        for (int i = 0; i < NUM_PROCESSORS; i++) {
-            processors[i].monitorSystem(T);
-            monitorCount += processors[i].monitorCount; 
+    void monitorSystem(double T, double monitorRate) {
+        double lambdaA =  monitorRate; 
+        monitor = new Monitor(lambdaA, this.serverId);
+        while (monitor.monEvt.timeStamp < T) {
+            timeline.addToTimeline(monitor.monEvt);
+            // monitorCount ++;
+            monitor.setNextMonitor(lambdaA); 
+            if (monitor.monEvt.timeStamp > T) {
+                break; 
+            }
         }
     }
 
-    // Finds the earliest available processor to serve a request that arrives at arrTime
-    int earliestAvailableProcessor() {
-        double temp = processors[0].currentRequest.doneEvt.timeStamp;
+    // Selects a processor to serve a request that arrives at arrTime
+    int selectProcessor(double arrTime) {
+        List<Integer> list = new ArrayList<Integer>();
+        double earliestDoneTime = processors[0].currentRequest.doneEvt.timeStamp;
         int idx = 0; 
+
+        // Iterate through all processors
         for (int i = 0; i < NUM_PROCESSORS; i++) {
-            if (temp > processors[i].currentRequest.doneEvt.timeStamp) {
-                temp = processors[i].currentRequest.doneEvt.timeStamp; 
+            // This if-statement finds the earliest done time among all processors
+            if (earliestDoneTime > processors[i].currentRequest.doneEvt.timeStamp) {
+                // processors[i] is available
+                earliestDoneTime = processors[i].currentRequest.doneEvt.timeStamp; 
                 idx = i; 
             }
+            // This if-statement records the available processors at arrTime in a list
+            if (arrTime > processors[i].currentRequest.doneEvt.timeStamp) {
+                list.add(i);
+            }
         }
-        return idx; 
+        // If no processor is available at arrTime, select the processor with the earliest doneTime to service the request
+        if (list.size() == 0) {
+            return idx;
+        } 
+        // If there are available processors at arrTime, randomly select a processor
+        else {
+            Random randomizer = new Random();
+            Integer random = list.get(randomizer.nextInt(list.size()));
+            return random; 
+        }
     }
 
     // Handle a request that is finished at the primary server
@@ -83,7 +147,7 @@ public abstract class Server implements Cloneable {
         queueIn = Timeline.sortRequests(queueIn);
         while (queueIn.size() != 0) {
             Request req = queueIn.remove(); 
-            int eap = earliestAvailableProcessor();
+            int eap = selectProcessor(req.arrEvt.timeStamp);
             // Processor services request
             Request handledRequest = processors[eap].handleRequest(T, req); 
             if (handledRequest != null) {

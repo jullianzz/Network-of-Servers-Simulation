@@ -44,13 +44,13 @@ public class Simulator {
         this.p32 = p32; 
 
         // S0 is a single-processor M/M/1 Server with determinate service time
-        this.S0 = new DeterminateServer(lambdaB, lambdaA, 0, 0, 1); 
+        this.S0 = new DeterminateServer(lambdaB, 0, 0, 1); 
         // S1 is a dual-processor M/M/1 Server with determinate service time                   
-        this.S1 = new DeterminateServer(lambdaC, lambdaA*p01, 0, 1, 2); 
+        this.S1 = new DeterminateServer(lambdaC, 0, 1, 2); 
         // S2 is a single-processor M/M/K Server with determinate service time
-        this.S2 = new MMKServer(lambdaD, lambdaA*p02, 0, 2, 1, K2); 
+        this.S2 = new MMKServer(lambdaD, 0, 2, 1, K2); 
         // S3 is a single-processor M/M/1 Server with non-determinate service time
-        this.S3 = new NondeterminateServer(lambdaA*p02, p3out, 3, 1, t1, p1, t2, p2, t3, p3); 
+        this.S3 = new NondeterminateServer(p3out, 3, 1, t1, p1, t2, p2, t3, p3); 
 
     }
 
@@ -98,6 +98,9 @@ public class Simulator {
         Request req = new Request(requestId, 0, arrEvt, null, null, null); 
 
         while (req.arrEvt.timeStamp < time) {
+            // Add the ARR event to the simulation timeline. Note: This is an important 
+            // step, because these arrivals actually get printed unlike the arrEvents in handOffRequest(...) of 
+            // the Server class
             timeline.addToTimeline(req.arrEvt); 
             queueSysIn.add(req);
             queueS0Out = S0.handleIncomingRequest(time, queueSysIn, queueS0Out);   
@@ -109,7 +112,8 @@ public class Simulator {
                 if (prob <= p01) {
                     queueS1In.add(r);
                 }
-                else {
+                else if (prob > p01 && prob <= p01 + p02) {
+                    // System.out.println("Adding stuff 3");
                     double peekTime = r.arrEvt.timeStamp; 
                     int pop = queueS2In.size() + S2.getCurrentPopulation(peekTime);
                     // System.out.printf("pop is %d\n", pop);
@@ -131,6 +135,7 @@ public class Simulator {
             queueS3In.clear();
             // Split outgoing requests of S3 between S1, S2, and exit
             while (queueS3Out.size() != 0) {
+                // System.out.println("SHOULD BE ZERO");
                 Request r = queueS3Out.remove(); 
                 double prob = Math.random(); 
                 if (prob <= p31) {
@@ -155,26 +160,26 @@ public class Simulator {
 
 
         // Create Monitor Events for the Servers
-        // S0.monitorSystem(time); 
-        // S1.monitorSystem(time); 
-        // S2.monitorSystem(time); 
-        // S3.monitorSystem(time); 
+        S0.monitorSystem(time, lambdaA); 
+        S1.monitorSystem(time, lambdaA); 
+        S2.monitorSystem(time, lambdaA); 
+        S3.monitorSystem(time, 1.0/7.8); 
 
         // Compute Utilization and Average Queue Length for Primary Server
-        // S0.computeStatistics(time); 
-        // S1.computeStatistics(time); 
-        // S2.computeStatistics(time); 
-        // S3.computeStatistics(time); 
+        S0.computeStatistics(time); 
+        S1.computeStatistics(time); 
+        S2.computeStatistics(time); 
+        S3.computeStatistics(time); 
 
         // Compute the Average Population of the entire System
-        // double totalMonitors = S0.monitorCount + S1.monitorCount + S2.monitorCount + S3.monitorCount; 
-        // double runningPopulation = S0.runningPopulation + S1.runningPopulation + S2.runningPopulation + S3.runningPopulation; 
-        // this.avgPopulation = runningPopulation / totalMonitors; 
+        double totalMonitors = S0.monitor.count + S1.monitor.count + S2.monitor.count + S3.monitor.count; 
+        double runningPopulation = S0.runningPopulation + S1.runningPopulation + S2.runningPopulation + S3.runningPopulation; 
+        this.avgPopulation = runningPopulation / totalMonitors; 
 
         // Compute the Average Response Time of the entire System
-        // double totalRequests = S0.completedRequests + S1.completedRequests + S2.completedRequests + S3.completedRequests; 
-        // double runningResponseTime = S0.runningResponseTime + S1.runningResponseTime + S2.runningResponseTime + S3.runningResponseTime; 
-        // this.avgResponseTime = runningResponseTime / totalRequests;
+        double totalRequests = S0.completedRequests + S1.completedRequests + S2.completedRequests + S3.completedRequests; 
+        double runningResponseTime = S0.runningResponseTime + S1.runningResponseTime + S2.runningResponseTime + S3.runningResponseTime; 
+        this.avgResponseTime = runningResponseTime / totalRequests;
          
         // Append the timelime of S0, S1, S2, and S3 together
         timeline.queue.addAll(S0.timeline.queue); 
@@ -183,7 +188,12 @@ public class Simulator {
         timeline.queue.addAll(S3.timeline.queue); 
 
         // Print the timeline of Events for the Network Of Queues
-        timeline.printTimeline();
+        // timeline.printTimeline();
+
+        // System.out.printf("Monitor count for S0: %d\n", S0.monitorCount);
+        // System.out.printf("Monitor count for S0,1: %d\n", S0.processors[0].monitorCount);
+        // System.out.printf("Running population for S0,1: %d\n", S0.processors[0].runningPopulation);
+
 
         System.out.println();
 
@@ -192,8 +202,13 @@ public class Simulator {
     }
 
     void printStatistics() {
+        // System.out.printf("Num S0 requests %d\n", S0.completedRequests);
+        // System.out.printf("Num S1 requests %d\n", S1.completedRequests);
+        // System.out.printf("Num S3 requests %d\n", S3.completedRequests);
         /* S0 Statistics */
-        System.out.printf("S0 UTIL: %f", S0.processors[0].Utilization);
+        System.out.printf("S0 UTIL: %f", S0.Utilization);
+        System.out.println();
+        System.out.printf("S0 monitor count: %d", S0.monitor.count);
         System.out.println();
         System.out.printf("S0 QLEN: %f", S0.avgPopulation);
         System.out.println();
@@ -206,14 +221,18 @@ public class Simulator {
         System.out.println();
         System.out.printf("S1,2 UTIL: %f", S1.processors[1].Utilization);
         System.out.println();
-        System.out.printf("S1 QLEN: %f", S1.avgPopulation);
+        System.out.printf("S1 monitor count: %d", S1.monitor.count);
         System.out.println();
-        System.out.printf("S1 TRESP: %f", S1.avgResponseTime);
+        System.out.printf("S1 running population: %f", S1.runningPopulation);
         System.out.println();
+        // System.out.printf("S1 QLEN: %f", S1.avgPopulation);
+        // System.out.println();
+        // System.out.printf("S1 TRESP: %f", S1.avgResponseTime);
+        // System.out.println();
         System.out.println();
 
         /* S2 Statistics */
-        System.out.printf("S2 UTIL: %f", S2.processors[0].Utilization);
+        System.out.printf("S2 UTIL: %f", S2.Utilization);
         System.out.println();
         System.out.printf("S2 QLEN: %f", S2.avgPopulation);
         System.out.println();
@@ -224,7 +243,15 @@ public class Simulator {
         System.out.println();
 
         /* S3 Statistics */
-        System.out.printf("S3 UTIL: %f", S3.processors[0].Utilization);
+        System.out.printf("S3 UTIL: %f", S3.Utilization);
+        System.out.println();
+        // System.out.printf("S3,1 completed req: %d", S3.completedRequests);
+        // System.out.println();
+        // System.out.printf("S3 avg service time: %f", S3.avgServiceTime);
+        // System.out.println();
+        // System.out.printf("S3 monitor count: %d", S3.monitor.count);
+        // System.out.println();
+        System.out.printf("S3 running population: %f", S3.runningPopulation);
         System.out.println();
         System.out.printf("S3 QLEN: %f", S3.avgPopulation);
         System.out.println();
