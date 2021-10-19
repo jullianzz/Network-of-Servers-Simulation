@@ -3,8 +3,8 @@ import java.util.Iterator;
 
 public class MMKServer extends DeterminateServer {
 
-    public MMKServer(double lambdaS, double P_Termination, int serverId, int numProcessors, int K) {
-        super(lambdaS, P_Termination, serverId, numProcessors);
+    public MMKServer(double lambdaS, int serverId, int numProcessors, int K) {
+        super(lambdaS, serverId, numProcessors);
         this.K = K; 
         this.numDroppedRequests = 0; 
     }

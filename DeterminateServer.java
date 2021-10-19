@@ -2,9 +2,9 @@
 
 public class DeterminateServer extends Server {
 
-    public DeterminateServer(double lambdaS, double P_Termination, int serverId, int numProcessors) 
+    public DeterminateServer(double lambdaS, int serverId, int numProcessors) 
     {
-        super(P_Termination, serverId, numProcessors);
+        super(serverId, numProcessors);
         this.lambdaS = lambdaS; 
     }
 

@@ -2,9 +2,7 @@
 public class Processor {
 
     // Constructor
-    public Processor(double P_Termination, Server s, int processorId) {
-        // this.lambdaA = lambdaA; 
-        this.P_Termination = P_Termination; 
+    public Processor(Server s, int processorId) {
         this.parentServer = s; 
         this.currentRequest = Request.dummy(s.serverId);
         this.completedRequests = 0; 
@@ -21,7 +19,6 @@ public class Processor {
     // Meta Data
     int completedRequests;                  // Number of completed requests seen by the processor
     Request currentRequest;                 // Current request processed at the processor
-    double P_Termination;                   // Probability a request terminates at the parent Server
     int processorId;
 
     // Timeline
@@ -35,8 +32,6 @@ public class Processor {
     double runningUtilization; 
     double runningResponseTime; 
     // double runningWaitTime; 
-    // int monitorCount; 
-
 
     // Receive a req and use the arrEvt field to update the req start, done, and from events
     Request handleRequest(double T, Request req) {
@@ -56,8 +51,8 @@ public class Processor {
             if (previousServerId != parentServer.serverId) {
                 fromEvt = new FromEvent(arrTime, Id, previousServerId, true, parentServer.serverId); 
             } 
-            temp = new Request(Id, ++req.serversVisited, arrEvt, startEvt, doneEvt, fromEvt); 
-            currentRequest = new Request(Id, ++req.serversVisited, arrEvt, startEvt, doneEvt, fromEvt); 
+            temp = new Request(Id, req.serversVisited+1, arrEvt, startEvt, doneEvt, fromEvt); 
+            currentRequest = new Request(Id, req.serversVisited+1, arrEvt, startEvt, doneEvt, fromEvt); 
             
             runningUtilization += (doneTime - startTime);         // Update total utilization time
             runningResponseTime += (doneTime - arrTime);          // Update total response time

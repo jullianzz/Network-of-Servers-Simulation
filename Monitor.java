@@ -14,15 +14,19 @@ public class Monitor {
     
     MonitorEvent monEvt;   // current monitor event
 
-    public Monitor(double lambdaA, int serverId) {
+    public Monitor(double lambdaA, int serverId, double time) {
         double snapshotTime = Exp.getExp(lambdaA); 
         this.monEvt = new MonitorEvent(snapshotTime, -1, serverId); 
-        count = 1; 
+        if (monEvt.timeStamp < time) {
+            count ++; 
+        }
     }
 
-    void setNextMonitor(double lambdaA) {
+    void setNextMonitor(double lambdaA, double time) {
         double snapshotTime = monEvt.timeStamp + Exp.getExp(lambdaA);
         this.monEvt = new MonitorEvent(snapshotTime, -1, monEvt.serverId); 
-        count ++; 
+        if (monEvt.timeStamp < time) {
+            count ++; 
+        }
     }
 }
