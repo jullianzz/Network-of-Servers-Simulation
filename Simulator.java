@@ -184,7 +184,7 @@ public class Simulator {
         timeline.queue.addAll(S3.timeline.queue); 
 
         // Print the timeline of Events for the Network Of Queues
-        // timeline.printTimeline();
+        timeline.printTimeline();
 
         System.out.println();
 
