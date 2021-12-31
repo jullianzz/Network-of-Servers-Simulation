@@ -1,58 +1,77 @@
-// Julia Zeng, BU ID: U48618445
-// CS-350 HW 2
 
 import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.Collections;
 import java.util.Comparator;
 
 public class Timeline {
 
-    // Timeline Constructor
-    // public Timeline() {
-    // }
-
-    // implementation of timeline queue (FIFO) using Linked List
     LinkedList<Event> queue = new LinkedList<Event>();
 
-    // accepts two pieces of information that add the event input into the Timeline
+    // addToTimeline(...) adds the Event to the queue
     void addToTimeline(Event evtToAdd) {
-        queue.add(evtToAdd);
+        if (evtToAdd != null) {
+            queue.add(evtToAdd);
+        }
     }
 
-    // popNext() removes the oldest event from the timeline
+    // popNext() removes and returns the oldest Event from the queue 
     Event popNext() {
-        Event evt = queue.peek(); 
-        queue.remove();
+        Event evt = queue.remove();
         return evt; 
     }
 
+    // sortChronologically() sorts the queue according to the timeStamp of each Event
     void sortChronologically() {
-        // Sort Timeline queue according to the timeStamp of each Event
         Collections.sort(queue, 
         new Comparator<Event>() {
             @Override
             public int compare(Event a, Event b) {
-                return (a.timeStamp > b.timeStamp) ? 1 : 
-                       ((a.timeStamp < b.timeStamp) ? -1 : 
-                       ((a.type == Event.eventType.START && b.type == Event.eventType.DONE) ? 1 :
-                       ((a.type == Event.eventType.DONE && b.type == Event.eventType.START) ? -1 : 0
-                       )));
+                return 
+                (a.timeStamp > b.timeStamp) ? 1 : ( // 1
+                    (a.timeStamp < b.timeStamp) ? -1 : (
+                        (a.requestId < b.requestId) ? -1 : (
+                            (a.requestId > b.requestId) ? 1 : (
+                                (a.type == Event.eventType.DONE) ? -1 : (
+                                    (b.type == Event.eventType.DONE) ? 1 : (
+                                        (a.type == Event.eventType.START && b.type == Event.eventType.FROM) ? 1 : (
+                                            (a.type == Event.eventType.FROM && b.type == Event.eventType.START) ? -1 : 0
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ); // 1
             }
         }
         );
     }
 
-    // Todo : Understand that this method will remove timeline elements. May need refactoring
-    // in future assignments to use peek() method instead
+
     void printTimeline() {
-        // Scan through queue and print all events in their chronological order
-        // Pop Event from queue and print the eventType and timeStamp
-        Event event; 
-        while (this.queue.size() != 0) {
-            event = this.popNext(); 
-            System.out.printf("%s%d %s: %f", "R", event.requestId, event.type.toString(), event.timeStamp); 
-            System.out.println(); 
+        sortChronologically();
+        Event evt; 
+        for (Iterator<Event> iter = queue.iterator(); iter.hasNext();) {
+            evt = iter.next(); 
+            evt.print(); 
         }
+    }
+
+    static LinkedList<Request> sortRequests(LinkedList<Request> queue) {
+        Collections.sort(queue, 
+        new Comparator<Request>() {
+            @Override
+            public int compare(Request a, Request b) {
+                return 
+                (a.arrEvt.timeStamp >= b.arrEvt.timeStamp) ? 1 : ( 
+                    (a.arrEvt.timeStamp < b.arrEvt.timeStamp) ? -1 : 0
+                ); 
+            }
+        }
+        );
+        
+        return queue; 
     }
 
 }
