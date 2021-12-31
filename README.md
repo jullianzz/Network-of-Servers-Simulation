@@ -5,7 +5,7 @@ A simulator that models the communication between an abstract network of computi
 ### Download and Run
 * Download the version in the main branch
 * Navigate to local directory containing the files and compile all .java files
-* Run Simulator main using ```java Simulator <param0> p```
+* Run Simulator main using ```java Simulator &lt;param0&gt; p```
 
 ### Event-Modelling Branch (Step 1)
 Developed Code to Generate Random Numbers that 
