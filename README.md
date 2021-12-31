@@ -24,22 +24,5 @@ A simulator that models the communication between an abstract network of computi
 16. param15: routing probability p3,1 that a request will go from S3 back to S1
 17. param16: routing probability p3,2 that a request will go from S3 back to S2
 
-
-### Event-Modelling Branch (Step 1)
-Developed Code to Generate Random Numbers that 
-* Implemented the Java function with the following prototype ```double getExp(double lambda)``` in java class file ```Exp.java```. The function accepts one parameter lambda λ, which is the rate of arrival of requests. 
-* Implemented a Java class called Event in java class file ```Event.java``` that represents a generic timed event with 
-
-
-### Single Server Queue Branch (Step 2)
-
-### Dual Server Queuing System Branch (Step 3)
-
-
-### Multiple Server Simulation (Step 4)
-
-
-### Relections and Future Work 
-
 ### Please Read
-*** ALL code written in this repository is under the authorship of Julia Zeng (@jullianzz), who belongs to the Electrical & Computer Engineering Department at Boston University. All code is written strictly for educational purposes and not authorized for redistribution or re-purposing in any domain or by any individual or enterprise. ***
+***ALL code written in this repository is under the authorship of Julia Zeng (@jullianzz), who belongs to the Electrical & Computer Engineering Department at Boston University. All code is written strictly for educational purposes and not authorized for redistribution or re-purposing in any domain or by any individual or enterprise.***
