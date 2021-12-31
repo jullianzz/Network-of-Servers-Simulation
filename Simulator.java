@@ -86,9 +86,9 @@ public class Simulator {
     // Communication queues between the servers (necessary for decoupling)
     LinkedList<Request> queueSysIn = new LinkedList<Request>();     // Queue for requests entering the System
     LinkedList<Request> queueS0Out = new LinkedList<Request>();     // Queue for requests leaving S0
-    LinkedList<Request> queueS1In = new LinkedList<Request>();     // Queue for requests entering S1
+    LinkedList<Request> queueS1In = new LinkedList<Request>();      // Queue for requests entering S1
     LinkedList<Request> queueS2In = new LinkedList<Request>();      // Queue for requests entering S2 - S2 Queue is FINITE with size K2
-    LinkedList<Request> queueS3In = new LinkedList<Request>();     // Queue for requests entering S3
+    LinkedList<Request> queueS3In = new LinkedList<Request>();      // Queue for requests entering S3
     LinkedList<Request> queueS3Out = new LinkedList<Request>();     // Queue for requests exiting S3
 
     // simulate(...) simulates the arrival and execution of requests at a generic server for 'time' milliseconds
@@ -113,15 +113,11 @@ public class Simulator {
                     queueS1In.add(r);
                 }
                 else if (prob > p01 && prob <= p01 + p02) {
-                    // System.out.println("Adding stuff 3");
                     double peekTime = r.arrEvt.timeStamp; 
                     int pop = queueS2In.size() + S2.getCurrentPopulation(peekTime);
-                    // System.out.printf("pop is %d\n", pop);
                     if (pop < K2) {
-                        // System.out.println("Added to S2!");
                         queueS2In.add(r); 
                     } else {
-                        // System.out.println("Rejected by S2");
                         S2.handleRejectedRequest();
                     }
 
@@ -135,7 +131,6 @@ public class Simulator {
             queueS3In.clear();
             // Split outgoing requests of S3 between S1, S2, and exit
             while (queueS3Out.size() != 0) {
-                // System.out.println("SHOULD BE ZERO");
                 Request r = queueS3Out.remove(); 
                 double prob = Math.random(); 
                 if (prob <= p31) {
@@ -188,12 +183,7 @@ public class Simulator {
         timeline.queue.addAll(S3.timeline.queue); 
 
         // Print the timeline of Events for the Network Of Queues
-        // timeline.printTimeline();
-
-        // System.out.printf("Monitor count for S0: %d\n", S0.monitorCount);
-        // System.out.printf("Monitor count for S0,1: %d\n", S0.processors[0].monitorCount);
-        // System.out.printf("Running population for S0,1: %d\n", S0.processors[0].runningPopulation);
-
+        timeline.printTimeline();
 
         System.out.println();
 
@@ -202,13 +192,8 @@ public class Simulator {
     }
 
     void printStatistics() {
-        // System.out.printf("Num S0 requests %d\n", S0.completedRequests);
-        // System.out.printf("Num S1 requests %d\n", S1.completedRequests);
-        // System.out.printf("Num S3 requests %d\n", S3.completedRequests);
         /* S0 Statistics */
         System.out.printf("S0 UTIL: %f", S0.Utilization);
-        System.out.println();
-        System.out.printf("S0 monitor count: %d", S0.monitor.count);
         System.out.println();
         System.out.printf("S0 QLEN: %f", S0.avgPopulation);
         System.out.println();
@@ -225,10 +210,6 @@ public class Simulator {
         System.out.println();
         System.out.printf("S1 running population: %f", S1.runningPopulation);
         System.out.println();
-        // System.out.printf("S1 QLEN: %f", S1.avgPopulation);
-        // System.out.println();
-        // System.out.printf("S1 TRESP: %f", S1.avgResponseTime);
-        // System.out.println();
         System.out.println();
 
         /* S2 Statistics */
@@ -244,14 +225,6 @@ public class Simulator {
 
         /* S3 Statistics */
         System.out.printf("S3 UTIL: %f", S3.Utilization);
-        System.out.println();
-        // System.out.printf("S3,1 completed req: %d", S3.completedRequests);
-        // System.out.println();
-        // System.out.printf("S3 avg service time: %f", S3.avgServiceTime);
-        // System.out.println();
-        // System.out.printf("S3 monitor count: %d", S3.monitor.count);
-        // System.out.println();
-        System.out.printf("S3 running population: %f", S3.runningPopulation);
         System.out.println();
         System.out.printf("S3 QLEN: %f", S3.avgPopulation);
         System.out.println();

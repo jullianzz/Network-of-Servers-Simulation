@@ -1,6 +1,3 @@
-// Julia Zeng, BU ID: U48618445
-// CS-350 HW 2
-
 import java.lang.Math;
 
 public class Exp {
@@ -9,7 +6,7 @@ public class Exp {
         //returns interarrival time, a random value in exponential distribution with mean T = 1/lambda
         double Y = Math.random();                           // Y is selected from a uniformly random distribution
         double x = -1.0*Math.log(1.0-Y)/lambda;             // x is the r.v. for exponential distribution
-        // double expPdf = lambda*Math.exp(-1.0*lambda*x);     // expPdf is the value of the exponential pdf at x  
+        // double expPdf = lambda*Math.exp(-1.0*lambda*x);  // expPdf is the value of the exponential pdf at x  
 
         return x; 
     }
