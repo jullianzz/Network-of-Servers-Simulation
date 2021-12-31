@@ -40,3 +40,6 @@ Developed Code to Generate Random Numbers that
 
 
 ### Relections and Future Work 
+
+### Please Read
+*** ALL code written in this repository is under the authorship of Julia Zeng (@jullianzz), who belongs to the Electrical & Computer Engineering Department at Boston University. All code is written strictly for educational purposes and not authorized for redistribution or re-purposing in any domain or by any individual or enterprise. ***
