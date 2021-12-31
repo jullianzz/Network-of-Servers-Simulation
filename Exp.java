@@ -5,7 +5,7 @@ import java.lang.Math;
 
 public class Exp {
     
-    double getExp(double lambda) {
+    static double getExp(double lambda) {
         //returns interarrival time, a random value in exponential distribution with mean T = 1/lambda
         double Y = Math.random();                           // Y is selected from a uniformly random distribution
         double x = -1.0*Math.log(1.0-Y)/lambda;             // x is the r.v. for exponential distribution
@@ -15,12 +15,11 @@ public class Exp {
     }
 
     public static void main(String[] args) { 
-        Exp exp = new Exp(); 
         double lambda = Double.parseDouble(args[0]);
         int N = Integer.parseInt(args[1]);
 
         for (int i = 0; i < N; i++) {
-            System.out.println(exp.getExp(lambda)); 
+            System.out.println(getExp(lambda)); 
         }
 
     }

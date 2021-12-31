@@ -1,26 +1,35 @@
-// Julia Zeng, BU ID: U48618445
-// CS-350 HW 2
 
-public class Event {
-    // enumeration goes here 
-    public enum eventType { ARR, START, DONE }
+public abstract class Event {
 
-    // Event constructor
-    public Event(eventType type, double timeStamp, int tag) {
+    public enum eventType { ARR, START, DONE, MONITOR, NEXT, FROM, NULL }
+
+    public Event(eventType type, double timeStamp, int tag, int serverId) {
         this.type = type; 
         this.timeStamp = timeStamp; 
         this.requestId = tag; 
+        this.serverId = serverId; 
     }
 
-    // class member: eventType type;
+    public Event(eventType type, double timeStamp, int tag, int serverId, boolean print) {
+        this.type = type; 
+        this.timeStamp = timeStamp; 
+        this.requestId = tag; 
+        this.serverId = serverId; 
+        this.print = print;
+    }
+
     eventType type; 
 
-    // class member: double timeStamp;  
     double timeStamp; 
 
-    // class member: int requestId; this is the tag of the request in the
-    // order that it arrives at the server
-    // e.g. for the first request, requestId = 0.
     int requestId; 
+
+    int serverId; 
+
+    boolean print;     // If true, print this event in Timeline
+
+    abstract void print(); 
+
+    // abstract void deepCopy(); 
 
 }
